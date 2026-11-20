@@ -119,7 +119,7 @@
     <p class="tag"><span class="dot"></span>Winston HQ · Online</p>
     <h1 class="greet" id="greet">Good day, <span>Winston</span></h1>
     <p class="date" id="date">—</p>
-    <p class="motto"><b>The Million Goal.</b> 1,000,000 by mid–late 2028.<br>Every task should move the number.</p>
+    <p class="motto"><b>The Million Goal.</b> KES 1,000,000 by Dec 2027.<br>Every task should move the number.</p>
   </div>
 
   <!-- CENTER: clock -->
@@ -158,7 +158,7 @@
       </svg>
       <div style="flex:1">
         <p class="label">Million Goal · earned so far</p>
-        <p class="big" id="goalAmt">0<small>/ 1,000,000</small></p>
+        <p class="big" id="goalAmt">0<small>/ KES 1M</small></p>
         <div class="bar"><i id="timeBar"></i></div>
         <p class="sub" id="timeLeft">—</p>
       </div>
@@ -171,7 +171,7 @@
   const EARNED = 0;                 // total received toward the goal
   const GOAL = 1000000;
   const GOAL_START = new Date('2026-11-18T00:00:00+03:00');
-  const GOAL_END   = new Date('2028-11-18T00:00:00+03:00');
+  const GOAL_END   = new Date("2027-12-31T23:59:00+03:00");
   const SEMESTER_END = new Date('2026-11-25T23:59:00+03:00');
   const EXAMS = [
     ['Advanced Database', '2026-12-02T11:00:00+03:00'],
@@ -233,7 +233,7 @@
     $('timeLeft').innerHTML = `<b>${days(now, GOAL_END)} days</b> left · ${(used * 100).toFixed(1)}% of runway used`;
   }
 
-  $('goalAmt').innerHTML = `${EARNED.toLocaleString('en-US')}<small>/ ${GOAL.toLocaleString('en-US')}</small>`;
+  $('goalAmt').innerHTML = `${EARNED.toLocaleString('en-US')}<small>/ KES 1M</small>`;
   requestAnimationFrame(() => { $('goalRing').style.strokeDashoffset = G * (1 - Math.min(1, EARNED / GOAL)); });
   $('goalRing').style.strokeDashoffset = G;
 
