@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Winston HQ · Command Center</title>
+<style>
+  :root {
+    --bg: #070B09;
+    --panel: rgba(18, 28, 22, 0.72);
+    --line: rgba(226, 169, 59, 0.18);
+    --gold: #E2A93B;
+    --gold-soft: rgba(226, 169, 59, 0.55);
+    --green: #3DDC97;
+    --text: #EDEAE0;
+    --muted: #8A9A8F;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--sans); height: 100%; }
+
+  .hq {
+    position: relative; overflow: hidden; min-height: 340px; padding: 28px 32px;
+    border-radius: 18px; border: 1px solid var(--line);
+    background:
+      radial-gradient(900px 340px at 50% -40%, rgba(226,169,59,0.16), transparent 60%),
+      radial-gradient(600px 300px at 100% 120%, rgba(61,220,151,0.08), transparent 60%),
+      var(--bg);
+    display: grid; grid-template-columns: 1.05fr 1fr 1.15fr; gap: 24px; align-items: center;
+  }
+  /* animated grid + scan line */
+  .grid-bg {
+    position: absolute; inset: 0; pointer-events: none; opacity: .35;
+    background-image:
+      linear-gradient(rgba(226,169,59,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(226,169,59,0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+    animation: drift 24s linear infinite;
+  }
+  @keyframes drift { to { background-position: 32px 32px, 32px 32px; } }
+  .scan {
+    position: absolute; left: 0; right: 0; height: 120px; top: -120px; pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(226,169,59,0.07), transparent);
+    animation: scan 7s ease-in-out infinite;
+  }
+  @keyframes scan { 0% { top: -120px; } 100% { top: 100%; } }
+  .corner { position: absolute; width: 18px; height: 18px; border-color: var(--gold-soft); border-style: solid; }
+  .c1 { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+  .c2 { top: 10px; right: 10px; border-width: 2px 2px 0 0; }
+  .c3 { bottom: 10px; left: 10px; border-width: 0 0 2px 2px; }
+  .c4 { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+
+  .col { position: relative; z-index: 1; }
+  .tag { font-family: var(--mono); font-size: 11px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* left */
+  .greet { font-size: 30px; font-weight: 700; margin-top: 14px; line-height: 1.15; letter-spacing: -0.5px; }
+  .greet span { color: var(--gold); }
+  .date { font-family: var(--mono); color: var(--muted); font-size: 13px; margin-top: 10px; letter-spacing: 1px; }
+  .motto { margin-top: 18px; font-size: 14px; color: var(--muted); border-left: 2px solid var(--gold); padding-left: 12px; line-height: 1.5; }
+  .motto b { color: var(--text); font-weight: 600; }
+
+  /* clock */
+  .clock-wrap { display: grid; place-items: center; }
+  .clock { position: relative; width: 236px; height: 236px; }
+  .clock svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(226,169,59,0.10); stroke-width: 6; }
+  .ring-sec { fill: none; stroke: var(--gold); stroke-width: 6; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(226,169,59,.7)); transition: stroke-dashoffset .95s linear; }
+  .ticks line { stroke: rgba(237,234,224,0.25); stroke-width: 2; }
+  .ticks line.major { stroke: var(--gold-soft); stroke-width: 3; }
+  .orbit { position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(61,220,151,0.25); animation: spin 40s linear infinite; }
+  .orbit::after { content: ""; position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .face { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .time { font-family: var(--mono); font-size: 52px; font-weight: 600; letter-spacing: 1px; text-shadow: 0 0 18px rgba(226,169,59,0.35); }
+  .time .colon { animation: blink 1s steps(1) infinite; color: var(--gold); }
+  @keyframes blink { 50% { opacity: .2; } }
+  .secs { font-family: var(--mono); color: var(--gold); font-size: 15px; margin-top: 2px; letter-spacing: 2px; }
+  .tz { font-family: var(--mono); color: var(--muted); font-size: 10px; letter-spacing: 3px; margin-top: 8px; }
+
+  /* right tiles */
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(6px); animation: rise .7s ease-out both; }
+  .tile:nth-child(2) { animation-delay: .1s; } .tile:nth-child(3) { animation-delay: .2s; } .tile:nth-child(4) { animation-delay: .3s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  .tile.wide { grid-column: span 2; display: flex; align-items: center; gap: 16px; }
+  .label { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .big { font-family: var(--mono); font-size: 30px; font-weight: 600; margin-top: 6px; color: var(--text); }
+  .big small { font-size: 12px; color: var(--muted); margin-left: 4px; letter-spacing: 1px; }
+  .sub { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  .sub b { color: var(--gold); font-weight: 600; }
+  .goal-ring { width: 64px; height: 64px; flex: none; transform: rotate(-90deg); }
+  .goal-ring .bg { fill: none; stroke: rgba(61,220,151,0.12); stroke-width: 7; }
+  .goal-ring .fg { fill: none; stroke: var(--green); stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(61,220,151,.6)); transition: stroke-dashoffset 1.6s ease-out; }
+  .bar { height: 5px; border-radius: 4px; background: rgba(226,169,59,0.12); margin-top: 10px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), #F6D58A); width: 0; transition: width 1.4s ease-out; }
+
+  @media (max-width: 860px) {
+    .hq { grid-template-columns: 1fr; text-align: left; }
+    .clock-wrap { order: -1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<section class="hq" aria-label="Winston HQ command center">
+  <div class="grid-bg"></div><div class="scan"></div>
+  <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i>
+
+  <!-- LEFT: identity -->
+  <div class="col">
+    <p class="tag"><span class="dot"></span>Winston HQ · Online</p>
+    <h1 class="greet" id="greet">Good day, <span>Winston</span></h1>
+    <p class="date" id="date">—</p>
+    <p class="motto"><b>The Million Goal.</b> 1,000,000 by mid–late 2028.<br>Every task should move the number.</p>
+  </div>
+
+  <!-- CENTER: clock -->
+  <div class="col clock-wrap">
+    <div class="clock">
+      <svg viewBox="0 0 236 236" aria-hidden="true">
+        <circle class="ring-bg" cx="118" cy="118" r="108"></circle>
+        <circle class="ring-sec" id="ringSec" cx="118" cy="118" r="108"></circle>
+        <g class="ticks" id="ticks"></g>
+      </svg>
+      <div class="orbit"></div>
+      <div class="face">
+        <div class="time" id="time">--<span class="colon">:</span>--</div>
+        <div class="secs" id="secs">:-- SEC</div>
+        <div class="tz">NAIROBI · EAT</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: tiles -->
+  <div class="col tiles">
+    <div class="tile">
+      <p class="label">Next exam</p>
+      <p class="big" id="examDays">--<small>DAYS</small></p>
+      <p class="sub" id="examName">—</p>
+    </div>
+    <div class="tile">
+      <p class="label">Semester ends</p>
+      <p class="big" id="semDays">--<small>DAYS</small></p>
+      <p class="sub">Study break <b>26 Nov – 1 Dec</b></p>
+    </div>
+    <div class="tile wide">
+      <svg class="goal-ring" viewBox="0 0 64 64" aria-hidden="true">
+        <circle class="bg" cx="32" cy="32" r="26"></circle>
+        <circle class="fg" id="goalRing" cx="32" cy="32" r="26"></circle>
+      </svg>
+      <div style="flex:1">
+        <p class="label">Million Goal · earned so far</p>
+        <p class="big" id="goalAmt">0<small>/ 1,000,000</small></p>
+        <div class="bar"><i id="timeBar"></i></div>
+        <p class="sub" id="timeLeft">—</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // ===== EDIT THESE (Claude updates them in the weekly review) =====
+  const EARNED = 0;                 // total received toward the goal
+  const GOAL = 1000000;
+  const GOAL_START = new Date('2026-11-18T00:00:00+03:00');
+  const GOAL_END   = new Date('2028-11-18T00:00:00+03:00');
+  const SEMESTER_END = new Date('2026-11-25T23:59:00+03:00');
+  const EXAMS = [
+    ['Advanced Database', '2026-12-02T11:00:00+03:00'],
+    ['Computer Org & Architecture', '2026-12-03T16:00:00+03:00'],
+    ['Business Systems Analysis', '2026-12-07T11:00:00+03:00'],
+    ['App Programming for the Internet', '2026-12-08T11:00:00+03:00'],
+    ['Principles of Ethics', '2026-12-09T16:00:00+03:00'],
+    ['East African Societies', '2026-12-11T11:00:00+03:00'],
+    ['Software Engineering', '2026-12-14T13:30:00+03:00'],
+    ['Probability & Statistics I', '2026-12-15T16:00:00+03:00'],
+  ];
+  // ==================================================================
+
+  const TZ = 'Africa/Nairobi';
+  const $ = id => document.getElementById(id);
+  const C = 2 * Math.PI * 108, G = 2 * Math.PI * 26;
+  $('ringSec').style.strokeDasharray = C;
+  $('goalRing').style.strokeDasharray = G;
+
+  // clock ticks
+  const ticks = $('ticks');
+  for (let i = 0; i < 60; i++) {
+    const a = i * 6 * Math.PI / 180, major = i % 5 === 0;
+    const r1 = major ? 92 : 96, r2 = 100;
+    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', 118 + r1 * Math.cos(a)); l.setAttribute('y1', 118 + r1 * Math.sin(a));
+    l.setAttribute('x2', 118 + r2 * Math.cos(a)); l.setAttribute('y2', 118 + r2 * Math.sin(a));
+    if (major) l.setAttribute('class', 'major');
+    ticks.appendChild(l);
+  }
+
+  const parts = d => Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+  }).formatToParts(d).map(p => [p.type, p.value]));
+  const days = (a, b) => Math.max(0, Math.ceil((b - a) / 86400000));
+
+  function tick() {
+    const now = new Date(), p = parts(now), h = +p.hour;
+    $('time').innerHTML = `${p.hour}<span class="colon">:</span>${p.minute}`;
+    $('secs').textContent = `:${p.second} SEC`;
+    $('ringSec').style.strokeDashoffset = C * (1 - (+p.second) / 60);
+    $('date').textContent = `${p.weekday.toUpperCase()} · ${p.day} ${p.month.toUpperCase()} ${p.year}`;
+    const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    $('greet').innerHTML = `${g}, <span>Winston</span>`;
+
+    const next = EXAMS.find(([, t]) => new Date(t) > now);
+    if (next) {
+      const d = days(now, new Date(next[1]));
+      $('examDays').innerHTML = `${d}<small>${d === 1 ? 'DAY' : 'DAYS'}</small>`;
+      $('examName').innerHTML = `<b>${next[0]}</b>`;
+    } else { $('examDays').innerHTML = `✓<small>DONE</small>`; $('examName').textContent = 'All exams complete'; }
+
+    const s = days(now, SEMESTER_END);
+    $('semDays').innerHTML = `${s}<small>${s === 1 ? 'DAY' : 'DAYS'}</small>`;
+
+    const span = GOAL_END - GOAL_START, used = Math.min(1, Math.max(0, (now - GOAL_START) / span));
+    $('timeBar').style.width = (used * 100).toFixed(1) + '%';
+    $('timeLeft').innerHTML = `<b>${days(now, GOAL_END)} days</b> left · ${(used * 100).toFixed(1)}% of runway used`;
+  }
+
+  $('goalAmt').innerHTML = `${EARNED.toLocaleString('en-US')}<small>/ ${GOAL.toLocaleString('en-US')}</small>`;
+  requestAnimationFrame(() => { $('goalRing').style.strokeDashoffset = G * (1 - Math.min(1, EARNED / GOAL)); });
+  $('goalRing').style.strokeDashoffset = G;
+
+  tick();
+  setTimeout(() => { tick(); setInterval(tick, 1000); }, 1000 - (Date.now() % 1000));
+</script>
+</body>
+</html>
